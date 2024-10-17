@@ -16,6 +16,7 @@ import axios from "axios";
 import {useNavigation} from '@react-navigation/native';
 import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootStackParamList} from "../../../App.tsx";
+import {env} from "../../../env";
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
@@ -33,7 +34,13 @@ const SignIn = () => {
         }
         setLoading(true);
         try {
-            const response = await axios.post("http://192.168.1.102:8000/api/auth/login", {
+            const access_token = await AsyncStorage.getItem('access_token');
+            const refresh_token = await AsyncStorage.getItem('refresh_token');
+            if (access_token || refresh_token) {
+                await AsyncStorage.removeItem('access_token');
+                await AsyncStorage.removeItem('refresh_token');
+            }
+            const response = await axios.post(`${env}auth/login`, {
                 email: email,
                 password: password,
             });
@@ -42,7 +49,7 @@ const SignIn = () => {
                 if (user_role === 'owner') {
                     await AsyncStorage.setItem('access_token', access);
                     await AsyncStorage.setItem('refresh_token', refresh);
-                    console.log("Login successfully omnibiz mobile app", response.data)
+                    console.log("Login successfully")
                     navigation.navigate("Home");
                     setEmail('');
                     setPassword('');

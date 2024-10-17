@@ -2,14 +2,13 @@ import React from 'react';
 import {SafeAreaView, StyleSheet, useColorScheme} from 'react-native';
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 import SignIn from "./src/screens/signin/signin.tsx";
-import Home from "./src/screens/dashboard/home.tsx";
-import {NavigationContainer} from "@react-navigation/native";
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import OwnerDashboard from "./src/screens/dashboard/home.tsx";
+import {NavigationContainer} from "@react-navigation/native";
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
-    Home: undefined;
     SignIn: undefined;
+    Home: undefined;
 };
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
