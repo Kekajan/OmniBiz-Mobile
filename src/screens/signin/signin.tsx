@@ -53,6 +53,7 @@ const SignIn = () => {
                     navigation.navigate("Home");
                     setEmail('');
                     setPassword('');
+                    setErrorMessage('')
                 } else {
                     setErrorMessage("Wrong email or password")
                 }
@@ -97,7 +98,6 @@ const SignIn = () => {
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             inputMode={"email"}
-                            // autoCapitalize="none"
                         />
                         <TextInput
                             style={styles.input}
@@ -160,11 +160,9 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     formContainer: {
-        // backgroundColor: '#42c9e1',
         marginTop: 40,
     },
     titleContainer: {
-        // backgroundColor: '#e85d5d',
     },
     title: {
         fontSize: 28,
@@ -179,9 +177,6 @@ const styles = StyleSheet.create({
         color: '#666',
         textAlign: 'center',
         marginBottom: 30,
-    },
-    link: {
-        // color: '#3498db',
     },
     inputContainer: {
         marginBottom: 30,

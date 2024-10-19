@@ -1,11 +1,15 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, StyleSheet, ScrollView, Button, Dimensions} from 'react-native';
+import {View, Text, StyleSheet, ScrollView, Button, Dimensions, TouchableOpacity} from 'react-native';
 import {LineChart, BarChart} from 'react-native-chart-kit';
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {env} from "../../../env";
 import {getDatesInRange} from "../../utils/dateRange.tsx";
 import {formatCurrency} from "../../utils/formatCurrency.tsx";
+import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome'
+import {faRightFromBracket} from '@fortawesome/free-solid-svg-icons/faRightFromBracket';
+import {useNavigation} from '@react-navigation/native';
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 
 interface Transaction {
     cash_book_data: {
@@ -14,6 +18,11 @@ interface Transaction {
         transaction_time: string;
     }[];
 }
+
+type RootStackParamList = {
+    SignIn: undefined;
+};
+type SignInScreenProp = NativeStackNavigationProp<RootStackParamList, 'SignIn'>;
 
 const OwnerDashboard = () => {
     const screenWidth = Dimensions.get('window').width;
@@ -27,6 +36,7 @@ const OwnerDashboard = () => {
     const [dateRange, setDateRange] = useState<string[]>([]);
     const [barChartPage, setBarChartPage] = useState(0);
     const [lineChartPage, setLineChartPage] = useState(0);
+    const navigation = useNavigation<SignInScreenProp>();
     const pageSize = 7
 
     useEffect(() => {
@@ -108,26 +118,26 @@ const OwnerDashboard = () => {
 
     const totalPages = Math.ceil(dateRange.length / pageSize)
     const handleBarChartNextPage = () => {
-        if (barChartPage < totalPages - 1) {
-            setBarChartPage(barChartPage + 1);
-        }
-    };
-
-    const handleBarChartPreviousPage = () => {
         if (barChartPage > 0) {
             setBarChartPage(barChartPage - 1);
         }
     };
 
+    const handleBarChartPreviousPage = () => {
+        if (barChartPage < totalPages - 1) {
+            setBarChartPage(barChartPage + 1);
+        }
+    };
+
     const handleLineChartNextPage = () => {
-        if (lineChartPage < totalPages - 1) {
-            setLineChartPage(lineChartPage + 1);
+        if (lineChartPage > 0) {
+            setLineChartPage(lineChartPage - 1);
         }
     };
 
     const handleLineChartPreviousPage = () => {
-        if (lineChartPage > 0) {
-            setLineChartPage(lineChartPage - 1);
+        if (lineChartPage < totalPages - 1) {
+            setLineChartPage(lineChartPage + 1);
         }
     };
 
@@ -135,18 +145,34 @@ const OwnerDashboard = () => {
     const reversedExpense = dailyData.expense.reverse();
     const reversedProfit = dailyData.profit.reverse();
 
-    const slicedBarChartLabels = dateRange.slice(barChartPage * pageSize, (barChartPage + 1) * pageSize);
-    const slicedBarChartProfit = reversedProfit.slice(barChartPage * pageSize, (barChartPage + 1) * pageSize);
+    const slicedBarChartLabels = dateRange.slice(barChartPage * pageSize, (barChartPage + 1) * pageSize).reverse();
+    const slicedBarChartProfit = reversedProfit.slice(barChartPage * pageSize, (barChartPage + 1) * pageSize).reverse();
 
-    const slicedLineChartLabels = dateRange.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize);
-    const slicedLineChartIncome = reversedIncome.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize);
-    const slicedLineChartExpense = reversedExpense.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize);
-    const slicedLineChartProfit = reversedProfit.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize);
+    const slicedLineChartLabels = dateRange.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize).reverse();
+    const slicedLineChartIncome = reversedIncome.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize).reverse();
+    const slicedLineChartExpense = reversedExpense.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize).reverse();
+    const slicedLineChartProfit = reversedProfit.slice(lineChartPage * pageSize, (lineChartPage + 1) * pageSize).reverse();
+
+    const handleLogout = async () => {
+        try {
+            await AsyncStorage.removeItem('access_token');
+            await AsyncStorage.removeItem('refresh_token');
+            navigation.navigate("SignIn");
+            console.log("Successfully logged out");
+        } catch (error) {
+            console.error("Failed to logout:", error);
+        }
+    }
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.topText}>Home</Text>
+                <View style={styles.logoutContainer}>
+                    <TouchableOpacity onPress={handleLogout}>
+                        <FontAwesomeIcon icon={faRightFromBracket} size={24}/>
+                    </TouchableOpacity>
+                </View>
             </View>
             <View style={styles.infoCard}>
                 <Text style={styles.infoCardTitle}>Incomes</Text>
@@ -164,7 +190,7 @@ const OwnerDashboard = () => {
                 <Text style={styles.infoCardTitle}>Today Sales</Text>
                 <Text style={styles.infoCardValue}>Rs. 12,000.00</Text>
             </View>
-            <Text style={styles.chartTitle}>Daily Sales</Text>
+            <Text style={styles.chartTitle}>Daily Profit</Text>
             <BarChart
                 data={{
                     labels: slicedBarChartLabels,
@@ -178,9 +204,10 @@ const OwnerDashboard = () => {
                 style={styles.chart}
             />
             <View style={styles.paginationButtons}>
-                <Button title="Previous" onPress={handleBarChartPreviousPage} disabled={barChartPage === 0}/>
+                <Button title="Previous" onPress={handleBarChartPreviousPage}
+                        disabled={barChartPage === totalPages - 1}/>
                 <Text>{`${barChartPage + 1} / ${totalPages}`}</Text>
-                <Button title="Next" onPress={handleBarChartNextPage} disabled={barChartPage === totalPages - 1}/>
+                <Button title="Next" onPress={handleBarChartNextPage} disabled={barChartPage === 0}/>
             </View>
 
             <Text style={styles.chartTitle}>Financial Metrics</Text>
@@ -188,9 +215,9 @@ const OwnerDashboard = () => {
                 data={{
                     labels: slicedLineChartLabels,
                     datasets: [
-                        {data: slicedLineChartIncome, color: () => 'blue', strokeWidth: 2},
-                        {data: slicedLineChartExpense, color: () => 'red', strokeWidth: 2},
-                        {data: slicedLineChartProfit, color: () => 'green', strokeWidth: 2},
+                        {data: slicedLineChartIncome, color: () => 'blue'},
+                        {data: slicedLineChartExpense, color: () => 'red'},
+                        {data: slicedLineChartProfit, color: () => 'green'},
                     ],
                 }}
                 width={screenWidth - 40}
@@ -199,46 +226,55 @@ const OwnerDashboard = () => {
                 style={styles.chart}
             />}
             <View style={styles.paginationButtons}>
-                <Button title="Previous" onPress={handleLineChartPreviousPage} disabled={lineChartPage === 0}/>
+                <Button title="Previous" onPress={handleLineChartPreviousPage}
+                        disabled={lineChartPage === totalPages - 1}/>
                 <Text>{`${lineChartPage + 1} / ${totalPages}`}</Text>
-                <Button title="Next" onPress={handleLineChartNextPage} disabled={lineChartPage === totalPages - 1}/>
+                <Button title="Next" onPress={handleLineChartNextPage} disabled={lineChartPage === 0}/>
             </View>
         </ScrollView>
     );
 };
 
 const chartConfig = {
-    backgroundColor: '#FFFFFF',
-    backgroundGradientFrom: '#FFFFFF',
-    backgroundGradientTo: '#FFFFFF',
+    backgroundColor: '#f5f5f5',
+    backgroundGradientFrom: '#f5f5f5',
+    backgroundGradientTo: '#f5f5f5',
     decimalPlaces: 0,
     color: (opacity = 1) => `rgba(0, 0, 139, ${opacity})`,
     style: {
         borderRadius: 16,
     },
     propsForDots: {
-        r: '6',
-        strokeWidth: '2',
-        stroke: '#000000',
+        r: '5',
     },
 };
 
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#FFFFFF',
         padding: 20,
     },
     header: {
-        flexDirection: 'row',
         justifyContent: 'center',
+        alignItems: 'center',
         marginBottom: 20,
+        position: 'relative',
     },
     topText: {
         fontSize: 24,
         fontWeight: 'bold',
         color: '#333',
         textAlign: 'center',
+    },
+    logoutContainer: {
+        position: 'absolute',
+        right: 10,
+        top: 6,
+    },
+    logoutText: {
+        fontSize: 18,
+        color: '#333',
     },
     infoCard: {
         backgroundColor: '#cce5ff',

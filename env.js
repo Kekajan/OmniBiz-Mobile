@@ -1,1 +1,1 @@
-export const env = 'http://192.168.45.99:8000/api/'
+export const env = 'http://192.168.26.99:8000/api/'
